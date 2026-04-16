@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0">Extrato Completo</h4>
+        <a href="{% url 'transaction-create' %}" class="btn btn-purple btn-sm">+ Nova Transação</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle border-0">
+            <thead class="text-muted small text-uppercase">
+                <tr>
+                    <th class="border-0">Data</th>
+                    <th class="border-0">Descrição</th>
+                    <th class="border-0">Conta</th>
+                    <th class="border-0">Categoria</th>
+                    <th class="border-0 text-end">Valor</th>
+                    <th class="border-0 text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td class="border-0">{{ t.date|date:"d/m/Y" }}</td>
+                    <td class="border-0">
+                        <div class="fw-bold">{{ t.title }}</div>
+                        {% if t.debt %}<small class="text-purple">Relacionado a: {{ t.debt.title }}</small>{% endif %}
+                    </td>
+                    <td class="border-0 small">{{ t.account.name }}</td>
+                    <td class="border-0"><span class="badge bg-dark border border-secondary">{{ t.category }}</span></td>
+                    <td class="border-0 text-end fw-bold {% if t.transaction_type == 'IN' %}text-success{% else %}text-danger{% endif %}">
+                        {% if t.transaction_type == 'IN' %}+{% else %}-{% endif %} R$ {{ t.amount }}
+                    </td>
+                    <td class="border-0 text-center">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'transaction-update' t.pk %}" class="btn btn-outline-secondary"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'transaction-delete' t.pk %}" class="btn btn-outline-danger"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted border-0">Nenhuma transação encontrada.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

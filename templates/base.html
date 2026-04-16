@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance App</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-body: #050505;
+            --surface: #111111;
+            --surface-light: #1a1a1a;
+            --accent-purple: #7c3aed;
+            --accent-purple-glow: rgba(124, 58, 237, 0.15);
+            --text-white: #ffffff;
+            --text-gray: #a1a1aa;
+            --border-color: #27272a;
+            --success-green: #10b981;
+            --danger-red: #ef4444;
+        }
+        
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-white);
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.01em;
+        }
+
+        /* Navbar Discreta */
+        .navbar {
+            background-color: rgba(5, 5, 5, 0.8) !important;
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            color: var(--text-white) !important;
+            font-size: 1.25rem;
+        }
+        
+        .navbar-brand span {
+            color: var(--accent-purple);
+        }
+
+        /* Cards Estilo App Moderno */
+        .card {
+            background-color: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        
+        .card:hover {
+            border-color: #3f3f46;
+        }
+
+        /* Tipografia */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-white);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        
+        p, span, td, th, label {
+            color: var(--text-white);
+        }
+
+        .text-muted {
+            color: var(--text-gray) !important;
+        }
+
+        /* Botões */
+        .btn-purple {
+            background-color: var(--accent-purple);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-purple:hover {
+            background-color: #8b5cf6;
+            color: white;
+            box-shadow: 0 0 20px var(--accent-purple-glow);
+        }
+
+        .btn-outline-custom {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-white);
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        .btn-outline-custom:hover {
+            background-color: var(--surface-light);
+            color: var(--text-white);
+            border-color: var(--text-gray);
+        }
+
+        /* Inputs e Forms */
+        .form-control, .form-select {
+            background-color: var(--surface-light);
+            border: 1px solid var(--border-color);
+            color: var(--text-white) !important;
+            border-radius: 12px;
+            padding: 0.75rem;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background-color: var(--surface-light);
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 2px var(--accent-purple-glow);
+            color: var(--text-white);
+        }
+
+        /* Tabelas */
+        .table {
+            color: var(--text-white);
+        }
+        
+        .table thead th {
+            color: var(--text-gray);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .table td {
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0.75rem;
+            vertical-align: middle;
+        }
+
+        /* Badges */
+        .badge-custom {
+            background-color: var(--surface-light);
+            color: var(--text-white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.4em 0.8em;
+            font-weight: 500;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-body); }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-purple); }
+
+        .nav-link { color: var(--text-gray); font-weight: 500; }
+        .nav-link:hover, .nav-link.active { color: var(--text-white); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'dashboard' %}">
+                FINANCE<span>.</span>
+            </a>
+            <div class="d-flex align-items-center gap-3 ms-auto">
+                <a class="nav-link px-2 d-lg-block d-none" href="{% url 'dashboard' %}">Dashboard</a>
+                <a class="nav-link px-2 d-lg-block d-none" href="{% url 'transaction-list' %}">Extrato</a>
+                <a href="{% url 'transaction-create' %}" class="btn btn-purple btn-sm">
+                    <span class="d-none d-sm-inline">+ Nova Transação</span>
+                    <span class="d-inline d-sm-none">+ Novo</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

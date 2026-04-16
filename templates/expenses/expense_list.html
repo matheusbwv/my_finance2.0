@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card bg-primary text-white p-3">
+            <h5 class="card-title">Gasto Total</h5>
+            <h2 class="fw-bold">R$ {{ total_amount|stringformat:".2f" }}</h2>
+        </div>
+    </div>
+</div>
+
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">Meus Gastos</h4>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Data</th>
+                    <th>Título</th>
+                    <th>Categoria</th>
+                    <th class="text-end">Valor</th>
+                    <th class="text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.date|date:"d/m/Y" }}</td>
+                    <td class="fw-bold">{{ expense.title }}</td>
+                    <td><span class="badge bg-secondary">{{ expense.category }}</span></td>
+                    <td class="text-end fw-bold text-danger">R$ {{ expense.amount }}</td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'expense-update' expense.pk %}" class="btn btn-outline-primary">Editar</a>
+                            <a href="{% url 'expense-delete' expense.pk %}" class="btn btn-outline-danger">Excluir</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                        Nenhum gasto registrado ainda.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
