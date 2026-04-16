@@ -4,7 +4,8 @@ import environ
 
 # Inicializa o environ
 env = environ.Env(
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
+    SECRET_KEY=(str, 'django-insecure-mude-isso-em-producao')
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -12,11 +13,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Tenta ler o arquivo .env se ele existir
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-mude-isso-em-producao')
+SECRET_KEY = env('SECRET_KEY')
 
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+# Adiciona domínios do Render e localhost por padrão
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['.onrender.com', 'localhost', '127.0.0.1'])
 
 INSTALLED_APPS = [
     'django.contrib.admin',
