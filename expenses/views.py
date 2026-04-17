@@ -144,38 +144,56 @@ def import_nubank_csv(request):
             skipped_count = 0
             
             for row in reader:
-                # Mapeamento usando nomes de colunas do Nubank (Data, Valor, Identificador, Descrição)
-                date_str = row.get('Data') or row.get('data')
-                amount_raw = row.get('Valor') or row.get('valor')
-                identifier = row.get('Identificador') or row.get('identificador') or row.get('Identifier')
-                description = row.get('Descrição') or row.get('descricao') or row.get('Description')
+                # 1. Detectar o tipo de extrato pelas colunas presentes
+                is_credit = 'date' in reader.fieldnames and 'title' in reader.fieldnames
+                
+                if is_credit:
+                    # Formato Cartão de Crédito: date,title,amount
+                    date_str = row.get('date')
+                    amount_raw = row.get('amount')
+                    description = row.get('title')
+                    identifier = f"credit-{date_str}-{description}-{amount_raw}" # Geramos um ID único para crédito
+                    date_format = '%Y-%m-%d'
+                else:
+                    # Formato Conta (Pix): Data,Valor,Identificador,Descrição
+                    date_str = row.get('Data') or row.get('data')
+                    amount_raw = row.get('Valor') or row.get('valor')
+                    description = row.get('Descrição') or row.get('descricao') or row.get('Description')
+                    identifier = row.get('Identificador') or row.get('identificador') or row.get('Identifier')
+                    date_format = '%d/%m/%Y'
                 
                 if not date_str or not amount_raw:
                     continue
                 
                 try:
                     # Converter Data
-                    date_obj = datetime.strptime(date_str.strip(), '%d/%m/%Y').date()
+                    date_obj = datetime.strptime(date_str.strip(), date_format).date()
                     
-                    # Limpar valor
+                    # Converter Valor
                     amount_clean = amount_raw.strip().replace(',', '.')
                     amount_float = float(amount_clean)
                     
-                    transaction_type = 'IN' if amount_float > 0 else 'OUT'
+                    if is_credit:
+                        # No Crédito: Positivo é GASTO, Negativo é PAGAMENTO/ESTORNO
+                        transaction_type = 'OUT' if amount_float > 0 else 'IN'
+                        category = "Cartão de Crédito"
+                        # Ignorar "Pagamento recebido" no crédito para não duplicar com a saída da conta
+                        if "Pagamento recebido" in description:
+                            continue
+                    else:
+                        # Na Conta: Negativo é GASTO, Positivo é GANHO
+                        transaction_type = 'IN' if amount_float > 0 else 'OUT'
+                        category = "Pix" if "Pix" in description else "Importado"
+
                     final_amount = abs(amount_float)
-                    
                     title = description.strip()[:200]
                     
-                    # Categoria básica baseada em Pix
-                    category = "Pix" if "Pix" in title else "Importado"
-                    
-                    # Verifica duplicata por Identificador OU por (data + valor + título)
+                    # Verifica duplicata
                     exists = False
                     if identifier:
                         exists = Transaction.objects.filter(identifier=identifier.strip()).exists()
                     
                     if not exists:
-                        # Segunda camada de segurança: Mesma data, valor e título
                         exists = Transaction.objects.filter(
                             account=account,
                             date=date_obj,
