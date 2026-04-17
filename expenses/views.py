@@ -177,7 +177,7 @@ def import_nubank_csv(request):
                         # No Crédito: Positivo é GASTO, Negativo é PAGAMENTO/ESTORNO
                         transaction_type = 'OUT' if amount_float > 0 else 'IN'
                         category = "Cartão de Crédito"
-                        # Ignorar "Pagamento recebido" no crédito para não duplicar com a saída da conta
+                        # Ignorar "Pagamento recebido" no crédito para evitar duplicidade com a conta
                         if "Pagamento recebido" in description:
                             continue
                     else:
@@ -188,18 +188,20 @@ def import_nubank_csv(request):
                     final_amount = abs(amount_float)
                     title = description.strip()[:200]
                     
-                    # Verifica duplicata
-                    exists = False
-                    if identifier:
-                        exists = Transaction.objects.filter(identifier=identifier.strip()).exists()
-                    
-                    if not exists:
-                        exists = Transaction.objects.filter(
-                            account=account,
-                            date=date_obj,
-                            amount=final_amount,
-                            title=title
-                        ).exists()
+                    # Geramos um identificador mais robusto (Incluindo a conta e o tipo)
+                    if not identifier:
+                        identifier = f"{account.id}-{date_obj}-{title}-{final_amount}-{transaction_type}"
+                    else:
+                        identifier = f"{account.id}-{identifier.strip()}"
+
+                    # Verifica duplicata completa
+                    exists = Transaction.objects.filter(
+                        account=account,
+                        date=date_obj,
+                        amount=final_amount,
+                        transaction_type=transaction_type,
+                        title=title
+                    ).exists()
                     
                     if not exists:
                         Transaction.objects.create(
@@ -209,7 +211,7 @@ def import_nubank_csv(request):
                             transaction_type=transaction_type,
                             title=title,
                             category=category,
-                            identifier=identifier.strip() if identifier else None
+                            identifier=identifier[:150]
                         )
                         created_count += 1
                     else:
