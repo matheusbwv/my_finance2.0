@@ -4,23 +4,11 @@ from .models import Transaction
 
 @receiver(post_save, sender=Transaction)
 def update_account_balance_on_save(sender, instance, created, **kwargs):
-    account = instance.account
-    if created:
-        if instance.transaction_type == 'IN':
-            account.balance += instance.amount
-        else:
-            account.balance -= instance.amount
-    else:
-        # Lógica para atualização de transação existente (opcional/complexa)
-        # Para simplificar agora, focaremos em novas transações
-        pass
-    account.save()
+    # Desativamos a alteração direta no banco para evitar contagem dupla
+    # O saldo agora é calculado dinamicamente na DashboardView
+    pass
 
 @receiver(post_delete, sender=Transaction)
 def update_account_balance_on_delete(sender, instance, **kwargs):
-    account = instance.account
-    if instance.transaction_type == 'IN':
-        account.balance -= instance.amount
-    else:
-        account.balance += instance.amount
-    account.save()
+    # Desativamos a alteração direta no banco para evitar contagem dupla
+    pass
