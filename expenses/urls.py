@@ -1,11 +1,12 @@
 from django.urls import path
 from .views import (
     DashboardView, TransactionListView, TransactionCreateView, TransactionUpdateView, TransactionDeleteView,
-    AccountCreateView, DebtCreateView
+    AccountCreateView, DebtCreateView, import_nubank_csv
 )
 
 urlpatterns = [
     path('', DashboardView.as_view(), name='dashboard'),
+    path('importar-extrato/', import_nubank_csv, name='import-csv'),
     
     # Transações
     path('transacoes/', TransactionListView.as_view(), name='transaction-list'),

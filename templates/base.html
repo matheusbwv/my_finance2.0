@@ -210,9 +210,12 @@
             <a class="navbar-brand" href="{% url 'dashboard' %}">
                 FINANCE<span>.</span>
             </a>
-            <div class="d-flex align-items-center gap-3 ms-auto">
+            <div class="d-flex align-items-center gap-2 ms-auto">
                 <a class="nav-link px-2 d-lg-block d-none" href="{% url 'dashboard' %}">Dashboard</a>
                 <a class="nav-link px-2 d-lg-block d-none" href="{% url 'transaction-list' %}">Extrato</a>
+                <a href="{% url 'import-csv' %}" class="btn btn-outline-custom btn-sm d-none d-sm-inline">
+                    <i class="fas fa-file-import me-1"></i> Importar
+                </a>
                 <a href="{% url 'transaction-create' %}" class="btn btn-purple btn-sm">
                     <span class="d-none d-sm-inline">+ Nova Transação</span>
                     <span class="d-inline d-sm-none">+ Novo</span>

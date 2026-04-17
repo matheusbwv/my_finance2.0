@@ -6,6 +6,12 @@ from datetime import datetime
 from .models import Account, Debt, Transaction
 from .forms import AccountForm, DebtForm, TransactionForm
 
+import csv
+import io
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from .models import Account, Debt, Transaction
+
 class DashboardView(TemplateView):
     template_name = 'expenses/dashboard.html'
 
@@ -79,3 +85,80 @@ class DebtCreateView(CreateView):
     form_class = DebtForm
     template_name = 'expenses/debt_form.html'
     success_url = reverse_lazy('dashboard')
+
+def import_nubank_csv(request):
+    accounts = Account.objects.all()
+    
+    if request.method == 'POST':
+        account_id = request.POST.get('account')
+        csv_file = request.FILES.get('file')
+        
+        if not account_id or not csv_file:
+            messages.error(request, "Por favor, selecione uma conta e um arquivo.")
+            return redirect('import-csv')
+            
+        account = get_object_or_404(Account, id=account_id)
+        
+        try:
+            # Lendo o arquivo CSV
+            decoded_file = csv_file.read().decode('utf-8').splitlines()
+            reader = csv.DictReader(decoded_file)
+            
+            created_count = 0
+            skipped_count = 0
+            
+            for row in reader:
+                # Mapeamento das colunas do Nubank: Data, Valor, Identificador, Descrição
+                date_str = row.get('Data')
+                amount_raw = row.get('Valor')
+                description = row.get('Descrição')
+                
+                if not date_str or not amount_raw:
+                    continue
+                
+                # Converter Data (01/04/2026 -> 2026-04-01)
+                date_obj = datetime.strptime(date_str, '%d/%m/%Y').date()
+                
+                # Converter Valor (-9.48 -> 9.48 e tipo IN/OUT)
+                amount_float = float(amount_raw)
+                transaction_type = 'IN' if amount_float > 0 else 'OUT'
+                final_amount = abs(amount_float)
+                
+                # Categoria Padrão baseada na descrição
+                category = "Importado (Nubank)"
+                if "Pix" in description:
+                    category = "Transferência Pix"
+                elif "Fatura" in description or "Pagamento" in description:
+                    category = "Pagamentos"
+                elif "Compra" in description:
+                    category = "Compras"
+                
+                # Verificar se já existe para evitar duplicata
+                exists = Transaction.objects.filter(
+                    account=account,
+                    date=date_obj,
+                    amount=final_amount,
+                    title=description[:200]
+                ).exists()
+                
+                if not exists:
+                    Transaction.objects.create(
+                        account=account,
+                        date=date_obj,
+                        amount=final_amount,
+                        transaction_type=transaction_type,
+                        title=description[:200],
+                        category=category
+                    )
+                    created_count += 1
+                else:
+                    skipped_count += 1
+            
+            messages.success(request, f"Importação concluída! {created_count} novas transações adicionadas. {skipped_count} duplicatas ignoradas.")
+            return redirect('dashboard')
+            
+        except Exception as e:
+            messages.error(request, f"Erro ao processar arquivo: {str(e)}")
+            return redirect('import-csv')
+
+    return render(request, 'expenses/import_csv.html', {'accounts': accounts})
