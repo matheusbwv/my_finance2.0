@@ -65,7 +65,13 @@
                         <div style="width: 8px; height: 8px; border-radius: 50%; background-color: {{ account.color }};"></div>
                         <span class="fw-semibold">{{ account.name }}</span>
                     </div>
-                    <span class="fw-bold">R$ {{ account.real_balance|stringformat:".2f" }}</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold me-2">R$ {{ account.real_balance|stringformat:".2f" }}</span>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'account-update' account.pk %}" class="btn btn-link text-muted p-0"><i class="fas fa-edit small"></i></a>
+                            <a href="{% url 'account-delete' account.pk %}" class="btn btn-link text-danger p-0 ms-2"><i class="fas fa-trash small"></i></a>
+                        </div>
+                    </div>
                 </div>
                 {% empty %}
                 <div class="text-center py-4">

@@ -91,6 +91,17 @@ class AccountCreateView(CreateView):
     template_name = 'expenses/account_form.html'
     success_url = reverse_lazy('dashboard')
 
+class AccountUpdateView(UpdateView):
+    model = Account
+    form_class = AccountForm
+    template_name = 'expenses/account_form.html'
+    success_url = reverse_lazy('dashboard')
+
+class AccountDeleteView(DeleteView):
+    model = Account
+    template_name = 'expenses/transaction_confirm_delete.html'
+    success_url = reverse_lazy('dashboard')
+
 # Views para Dívidas
 class DebtCreateView(CreateView):
     model = Debt

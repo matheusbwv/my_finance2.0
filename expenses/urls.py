@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     DashboardView, TransactionListView, TransactionCreateView, TransactionUpdateView, TransactionDeleteView,
-    AccountCreateView, DebtCreateView, import_nubank_csv, bulk_delete_transactions
+    AccountCreateView, AccountUpdateView, AccountDeleteView, DebtCreateView, import_nubank_csv, bulk_delete_transactions
 )
 
 urlpatterns = [
@@ -17,6 +17,8 @@ urlpatterns = [
     
     # Contas
     path('contas/nova/', AccountCreateView.as_view(), name='account-create'),
+    path('contas/<int:pk>/editar/', AccountUpdateView.as_view(), name='account-update'),
+    path('contas/<int:pk>/deletar/', AccountDeleteView.as_view(), name='account-delete'),
     
     # Dívidas
     path('dividas/nova/', DebtCreateView.as_view(), name='debt-create'),
