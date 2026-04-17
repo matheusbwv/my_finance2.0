@@ -35,8 +35,19 @@ class DashboardView(TemplateView):
         context['total_expense'] = transactions_month.filter(transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
         context['balance_month'] = context['total_income'] - context['total_expense']
         
-        context['accounts'] = Account.objects.all()
-        context['total_balance'] = Account.objects.aggregate(Sum('balance'))['balance__sum'] or 0
+        accounts = Account.objects.all()
+        total_balance = 0
+        
+        # Calcular saldo real para cada conta
+        for acc in accounts:
+            income = Transaction.objects.filter(account=acc, transaction_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
+            expense = Transaction.objects.filter(account=acc, transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
+            # Saldo Inicial + Entradas - Saídas
+            acc.real_balance = acc.balance + income - expense
+            total_balance += acc.real_balance
+            
+        context['accounts'] = accounts
+        context['total_balance'] = total_balance
         
         context['active_debts'] = Debt.objects.filter(status='ACTIVE')
         context['total_debts'] = sum(d.remaining_amount for d in context['active_debts'])

@@ -65,7 +65,7 @@
                         <div style="width: 8px; height: 8px; border-radius: 50%; background-color: {{ account.color }};"></div>
                         <span class="fw-semibold">{{ account.name }}</span>
                     </div>
-                    <span class="fw-bold">R$ {{ account.balance }}</span>
+                    <span class="fw-bold">R$ {{ account.real_balance|stringformat:".2f" }}</span>
                 </div>
                 {% empty %}
                 <div class="text-center py-4">
