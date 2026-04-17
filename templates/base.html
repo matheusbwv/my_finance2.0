@@ -130,7 +130,8 @@
 
         /* Tabelas */
         .table {
-            color: var(--text-white);
+            color: var(--text-white) !important;
+            background-color: transparent !important;
         }
         
         .table thead th {
@@ -140,12 +141,19 @@
             font-size: 0.75rem;
             letter-spacing: 0.05em;
             border-bottom: 1px solid var(--border-color);
+            background-color: transparent !important;
         }
         
-        .table td {
+        .table tbody, .table tr, .table td {
+            background-color: transparent !important;
             border-bottom: 1px solid var(--border-color);
             padding: 1rem 0.75rem;
             vertical-align: middle;
+            color: inherit !important;
+        }
+
+        .table-responsive {
+            background-color: transparent !important;
         }
 
         /* Badges */
