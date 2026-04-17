@@ -21,16 +21,30 @@ class DashboardView(TemplateView):
         # 1. Calcular saldo real para cada conta (Considerando TODO o histórico)
         accounts = Account.objects.all()
         total_balance = 0
+        total_credit_debt = 0
         
         for acc in accounts:
             all_transactions = Transaction.objects.filter(account=acc)
-            income = all_transactions.filter(transaction_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
-            expense = all_transactions.filter(transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
+            
+            # Saldo apenas de DINHEIRO (Exclui o que é Cartão de Crédito para não abater do saldo precocemente)
+            cash_transactions = all_transactions.exclude(category="Cartão de Crédito")
+            income = cash_transactions.filter(transaction_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
+            expense = cash_transactions.filter(transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
+            
+            # Gasto acumulado no CARTÃO (O que você deve no cartão dessa conta)
+            credit_transactions = all_transactions.filter(category="Cartão de Crédito")
+            c_income = credit_transactions.filter(transaction_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
+            c_expense = credit_transactions.filter(transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
+            
             acc.real_balance = acc.balance + income - expense
+            acc.credit_balance = c_expense - c_income # Total que você gastou no crédito
+            
             total_balance += acc.real_balance
+            total_credit_debt += acc.credit_balance
             
         context['accounts'] = accounts
         context['total_balance'] = total_balance
+        context['total_credit_debt'] = total_credit_debt
 
         # 2. Filtro de Mês e Ano para os outros cards (Receitas/Despesas do período)
         month = self.request.GET.get('month', datetime.now().month)
