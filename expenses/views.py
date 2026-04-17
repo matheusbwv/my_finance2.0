@@ -18,39 +18,22 @@ class DashboardView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Filtro de Mês e Ano
-        month = self.request.GET.get('month', datetime.now().month)
-        year = self.request.GET.get('year', datetime.now().year)
-        
-        try:
-            month = int(month)
-            year = int(year)
-        except ValueError:
-            month = datetime.now().month
-            year = datetime.now().year
-
-        transactions_month = Transaction.objects.filter(date__month=month, date__year=year)
-        
-        context['total_income'] = transactions_month.filter(transaction_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
-        context['total_expense'] = transactions_month.filter(transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
-        context['balance_month'] = context['total_income'] - context['total_expense']
-        
+        # 1. Calcular saldo real para cada conta (Considerando TODO o histórico)
         accounts = Account.objects.all()
         total_balance = 0
         
-        # Calcular saldo real para cada conta (Considerando TODO o histórico)
         for acc in accounts:
-            # Pegamos TODAS as transações dessa conta, sem filtro de data
             all_transactions = Transaction.objects.filter(account=acc)
             income = all_transactions.filter(transaction_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
             expense = all_transactions.filter(transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
-            
-            # Saldo Inicial + Entradas - Saídas
             acc.real_balance = acc.balance + income - expense
             total_balance += acc.real_balance
             
         context['accounts'] = accounts
         context['total_balance'] = total_balance
+
+        # 2. Filtro de Mês e Ano para os outros cards
+        month = self.request.GET.get('month', datetime.now().month)
         
         context['active_debts'] = Debt.objects.filter(status='ACTIVE')
         context['total_debts'] = sum(d.remaining_amount for d in context['active_debts'])
@@ -172,11 +155,13 @@ def import_nubank_csv(request):
                     # Categoria básica baseada em Pix
                     category = "Pix" if "Pix" in title else "Importado"
                     
-                    # Verifica duplicata pelo Identificador Único do Nubank
-                    # Se não houver identificador no CSV, usamos a trava antiga
+                    # Verifica duplicata por Identificador OU por (data + valor + título)
+                    exists = False
                     if identifier:
                         exists = Transaction.objects.filter(identifier=identifier.strip()).exists()
-                    else:
+                    
+                    if not exists:
+                        # Segunda camada de segurança: Mesma data, valor e título
                         exists = Transaction.objects.filter(
                             account=account,
                             date=date_obj,
