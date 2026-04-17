@@ -156,8 +156,10 @@ def import_nubank_csv(request):
             
             created_count = 0
             skipped_count = 0
+            error_count = 0
+            error_messages = []
             
-            for row in reader:
+            for row_num, row in enumerate(reader, start=2):
                 # 1. Detectar o tipo de extrato pelas colunas presentes
                 is_credit = 'date' in reader.fieldnames and 'title' in reader.fieldnames
                 
@@ -181,26 +183,38 @@ def import_nubank_csv(request):
                 
                 try:
                     # Converter Data
-                    date_obj = datetime.strptime(date_str.strip(), date_format).date()
+                    try:
+                        date_obj = datetime.strptime(date_str.strip(), date_format).date()
+                    except ValueError:
+                        # Tenta o formato alternativo caso a exportação venha diferente
+                        fallback_format = '%d/%m/%Y' if date_format == '%Y-%m-%d' else '%Y-%m-%d'
+                        date_obj = datetime.strptime(date_str.strip(), fallback_format).date()
                     
                     # Converter Valor
-                    amount_clean = amount_raw.strip().replace(',', '.')
+                    amount_clean = amount_raw.strip()
+                    if '.' in amount_clean and ',' in amount_clean:
+                        if amount_clean.rfind(',') > amount_clean.rfind('.'):
+                            amount_clean = amount_clean.replace('.', '').replace(',', '.')
+                        else:
+                            amount_clean = amount_clean.replace(',', '')
+                    elif ',' in amount_clean:
+                        amount_clean = amount_clean.replace(',', '.')
+                        
                     amount_float = float(amount_clean)
                     
                     if is_credit:
                         # No Crédito: Positivo é GASTO, Negativo é PAGAMENTO/ESTORNO
                         transaction_type = 'OUT' if amount_float > 0 else 'IN'
                         category = "Cartão de Crédito"
-                        # Ignorar "Pagamento recebido" no crédito para evitar duplicidade com a conta
-                        if "Pagamento recebido" in description:
-                            continue
+                        # Nota: Não podemos ignorar o 'Pagamento recebido', caso contrário o valor do cartão nunca diminui.
+                        # Ele não vai duplicar com a conta, pois a DashboardView exclui 'Cartão de Crédito' do saldo em dinheiro.
                     else:
                         # Na Conta: Negativo é GASTO, Positivo é GANHO
                         transaction_type = 'IN' if amount_float > 0 else 'OUT'
-                        category = "Pix" if "Pix" in description else "Importado"
+                        category = "Pix" if description and "Pix" in description else "Importado"
 
                     final_amount = abs(amount_float)
-                    title = description.strip()[:200]
+                    title = (description or "Sem Título").strip()[:200]
                     
                     # Geramos um identificador mais robusto (Incluindo a conta e o tipo)
                     if not identifier:
@@ -230,10 +244,19 @@ def import_nubank_csv(request):
                         created_count += 1
                     else:
                         skipped_count += 1
-                except (ValueError, TypeError) as e:
+                except Exception as e:
+                    error_count += 1
+                    if len(error_messages) < 5:
+                        error_messages.append(f"Linha {row_num}: {str(e)}")
                     continue
             
-            messages.success(request, f"Processamento concluído: {created_count} novas, {skipped_count} duplicatas.")
+            msg = f"Processamento concluído: {created_count} novas, {skipped_count} duplicatas."
+            if error_count > 0:
+                msg += f" Houve falha em {error_count} linha(s). Erros: {', '.join(error_messages)}."
+                messages.warning(request, msg)
+            else:
+                messages.success(request, msg)
+                
             return redirect('dashboard')
             
         except Exception as e:
