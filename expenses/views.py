@@ -117,9 +117,10 @@ def import_nubank_csv(request):
             skipped_count = 0
             
             for row in reader:
-                # Mapeamento usando nomes de colunas limpos
+                # Mapeamento usando nomes de colunas do Nubank (Data, Valor, Identificador, Descrição)
                 date_str = row.get('Data') or row.get('data')
                 amount_raw = row.get('Valor') or row.get('valor')
+                identifier = row.get('Identificador') or row.get('identificador') or row.get('Identifier')
                 description = row.get('Descrição') or row.get('descricao') or row.get('Description')
                 
                 if not date_str or not amount_raw:
@@ -129,7 +130,7 @@ def import_nubank_csv(request):
                     # Converter Data
                     date_obj = datetime.strptime(date_str.strip(), '%d/%m/%Y').date()
                     
-                    # Limpar valor (alguns CSVs usam vírgula para decimal)
+                    # Limpar valor
                     amount_clean = amount_raw.strip().replace(',', '.')
                     amount_float = float(amount_clean)
                     
@@ -138,16 +139,20 @@ def import_nubank_csv(request):
                     
                     title = description.strip()[:200]
                     
-                    # Categoria
+                    # Categoria básica baseada em Pix
                     category = "Pix" if "Pix" in title else "Importado"
                     
-                    # Verifica duplicata
-                    exists = Transaction.objects.filter(
-                        account=account,
-                        date=date_obj,
-                        amount=final_amount,
-                        title=title
-                    ).exists()
+                    # Verifica duplicata pelo Identificador Único do Nubank
+                    # Se não houver identificador no CSV, usamos a trava antiga
+                    if identifier:
+                        exists = Transaction.objects.filter(identifier=identifier.strip()).exists()
+                    else:
+                        exists = Transaction.objects.filter(
+                            account=account,
+                            date=date_obj,
+                            amount=final_amount,
+                            title=title
+                        ).exists()
                     
                     if not exists:
                         Transaction.objects.create(
@@ -156,13 +161,13 @@ def import_nubank_csv(request):
                             amount=final_amount,
                             transaction_type=transaction_type,
                             title=title,
-                            category=category
+                            category=category,
+                            identifier=identifier.strip() if identifier else None
                         )
                         created_count += 1
                     else:
                         skipped_count += 1
                 except (ValueError, TypeError) as e:
-                    print(f"Erro na linha: {row} - Erro: {e}")
                     continue
             
             messages.success(request, f"Processamento concluído: {created_count} novas, {skipped_count} duplicatas.")

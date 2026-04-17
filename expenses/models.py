@@ -50,6 +50,7 @@ class Transaction(models.Model):
     date = models.DateField(verbose_name="Data")
     transaction_type = models.CharField(max_length=3, choices=TYPE_CHOICES, default='OUT')
     category = models.CharField(max_length=100, verbose_name="Categoria")
+    identifier = models.CharField(max_length=100, unique=True, null=True, blank=True, verbose_name="ID da Transação")
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions', verbose_name="Conta/Banco")
     debt = models.ForeignKey(Debt, on_delete=models.SET_NULL, null=True, blank=True, related_name='payments', verbose_name="Vincular a Dívida")
     description = models.TextField(blank=True, verbose_name="Notas adicionais")
