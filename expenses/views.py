@@ -194,3 +194,13 @@ def import_nubank_csv(request):
             return redirect('import-csv')
 
     return render(request, 'expenses/import_csv.html', {'accounts': accounts})
+
+def bulk_delete_transactions(request):
+    if request.method == 'POST':
+        transaction_ids = request.POST.getlist('transaction_ids')
+        if transaction_ids:
+            deleted_count = Transaction.objects.filter(id__in=transaction_ids).delete()[0]
+            messages.success(request, f"{deleted_count} transações foram excluídas com sucesso.")
+        else:
+            messages.warning(request, "Nenhuma transação foi selecionada.")
+    return redirect('transaction-list')

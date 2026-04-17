@@ -2,50 +2,108 @@
 
 {% block content %}
 <div class="card p-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0">Extrato Completo</h4>
-        <a href="{% url 'transaction-create' %}" class="btn btn-purple btn-sm">+ Nova Transação</a>
-    </div>
+    <form id="bulk-delete-form" method="post" action="{% url 'transaction-bulk-delete' %}">
+        {% csrf_token %}
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <h4 class="fw-bold mb-0">Extrato Completo</h4>
+            <div class="d-flex gap-2">
+                <button type="button" id="btn-bulk-delete" class="btn btn-outline-danger btn-sm d-none" onclick="confirmBulkDelete()">
+                    <i class="fas fa-trash-alt me-1"></i> Excluir Selecionados
+                </button>
+                <a href="{% url 'transaction-create' %}" class="btn btn-purple btn-sm">+ Nova Transação</a>
+            </div>
+        </div>
 
-    <div class="table-responsive">
-        <table class="table table-dark table-hover align-middle border-0">
-            <thead class="text-muted small text-uppercase">
-                <tr>
-                    <th class="border-0">Data</th>
-                    <th class="border-0">Descrição</th>
-                    <th class="border-0">Conta</th>
-                    <th class="border-0">Categoria</th>
-                    <th class="border-0 text-end">Valor</th>
-                    <th class="border-0 text-center">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for t in transactions %}
-                <tr>
-                    <td class="border-0">{{ t.date|date:"d/m/Y" }}</td>
-                    <td class="border-0">
-                        <div class="fw-bold">{{ t.title }}</div>
-                        {% if t.debt %}<small class="text-purple">Relacionado a: {{ t.debt.title }}</small>{% endif %}
-                    </td>
-                    <td class="border-0 small">{{ t.account.name }}</td>
-                    <td class="border-0"><span class="badge bg-dark border border-secondary">{{ t.category }}</span></td>
-                    <td class="border-0 text-end fw-bold {% if t.transaction_type == 'IN' %}text-success{% else %}text-danger{% endif %}">
-                        {% if t.transaction_type == 'IN' %}+{% else %}-{% endif %} R$ {{ t.amount }}
-                    </td>
-                    <td class="border-0 text-center">
-                        <div class="btn-group btn-group-sm">
-                            <a href="{% url 'transaction-update' t.pk %}" class="btn btn-outline-secondary"><i class="fas fa-edit"></i></a>
-                            <a href="{% url 'transaction-delete' t.pk %}" class="btn btn-outline-danger"><i class="fas fa-trash"></i></a>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center py-5 text-muted border-0">Nenhuma transação encontrada.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle border-0">
+                <thead class="text-muted small text-uppercase">
+                    <tr>
+                        <th class="border-0" style="width: 40px;">
+                            <input type="checkbox" id="check-all" class="form-check-input bg-dark border-secondary">
+                        </th>
+                        <th class="border-0">Data</th>
+                        <th class="border-0">Descrição</th>
+                        <th class="border-0 d-none d-sm-table-cell">Conta</th>
+                        <th class="border-0 d-none d-md-table-cell">Categoria</th>
+                        <th class="border-0 text-end">Valor</th>
+                        <th class="border-0 text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr>
+                        <td class="border-0 text-center">
+                            <input type="checkbox" name="transaction_ids" value="{{ t.id }}" class="form-check-input bg-dark border-secondary transaction-checkbox">
+                        </td>
+                        <td class="border-0 small">{{ t.date|date:"d/m/Y" }}</td>
+                        <td class="border-0 text-truncate" style="max-width: 150px;">
+                            <div class="fw-bold">{{ t.title }}</div>
+                            {% if t.debt %}<small class="text-purple">Relacionado a: {{ t.debt.title }}</small>{% endif %}
+                        </td>
+                        <td class="border-0 small d-none d-sm-table-cell">{{ t.account.name }}</td>
+                        <td class="border-0 d-none d-md-table-cell"><span class="badge bg-dark border border-secondary">{{ t.category }}</span></td>
+                        <td class="border-0 text-end fw-bold {% if t.transaction_type == 'IN' %}text-success{% else %}text-danger{% endif %}" style="white-space: nowrap;">
+                            {% if t.transaction_type == 'IN' %}+{% else %}-{% endif %} R$ {{ t.amount }}
+                        </td>
+                        <td class="border-0 text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'transaction-update' t.pk %}" class="btn btn-outline-secondary"><i class="fas fa-edit"></i></a>
+                                <a href="{% url 'transaction-delete' t.pk %}" class="btn btn-outline-danger"><i class="fas fa-trash"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted border-0">Nenhuma transação encontrada.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
 </div>
+
+<script>
+    const checkAll = document.getElementById('check-all');
+    const checkboxes = document.querySelectorAll('.transaction-checkbox');
+    const deleteBtn = document.getElementById('btn-bulk-delete');
+
+    function toggleDeleteBtn() {
+        const checkedCount = document.querySelectorAll('.transaction-checkbox:checked').length;
+        if (checkedCount > 0) {
+            deleteBtn.classList.remove('d-none');
+        } else {
+            deleteBtn.classList.add('d-none');
+        }
+    }
+
+    checkAll.addEventListener('change', () => {
+        checkboxes.forEach(cb => cb.checked = checkAll.checked);
+        toggleDeleteBtn();
+    });
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', toggleDeleteBtn);
+    });
+
+    function confirmBulkDelete() {
+        const count = document.querySelectorAll('.transaction-checkbox:checked').length;
+        Swal.fire({
+            title: 'Excluir Selecionados?',
+            text: `Você tem certeza que deseja excluir as ${count} transações selecionadas?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#3f3f46',
+            confirmButtonText: 'Sim, excluir!',
+            cancelButtonText: 'Cancelar',
+            background: '#111111',
+            color: '#ffffff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('bulk-delete-form').submit();
+            }
+        });
+    }
+</script>
 {% endblock %}
