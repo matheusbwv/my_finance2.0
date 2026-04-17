@@ -100,61 +100,72 @@ def import_nubank_csv(request):
         account = get_object_or_404(Account, id=account_id)
         
         try:
-            # Lendo o arquivo CSV
-            decoded_file = csv_file.read().decode('utf-8').splitlines()
-            reader = csv.DictReader(decoded_file)
+            # Lendo o arquivo CSV com suporte a UTF-8-SIG (para remover o BOM se existir)
+            file_data = csv_file.read().decode('utf-8-sig')
+            io_string = io.StringIO(file_data)
+            
+            # Usamos o sniffer para detectar o delimitador (vírgula ou ponto e vírgula)
+            dialect = csv.Sniffer().sniff(io_string.read(1024))
+            io_string.seek(0)
+            
+            reader = csv.DictReader(io_string, dialect=dialect)
+            
+            # Limpa os nomes das colunas (remove espaços extras)
+            reader.fieldnames = [name.strip() for name in reader.fieldnames]
             
             created_count = 0
             skipped_count = 0
             
             for row in reader:
-                # Mapeamento das colunas do Nubank: Data, Valor, Identificador, Descrição
-                date_str = row.get('Data')
-                amount_raw = row.get('Valor')
-                description = row.get('Descrição')
+                # Mapeamento usando nomes de colunas limpos
+                date_str = row.get('Data') or row.get('data')
+                amount_raw = row.get('Valor') or row.get('valor')
+                description = row.get('Descrição') or row.get('descricao') or row.get('Description')
                 
                 if not date_str or not amount_raw:
                     continue
                 
-                # Converter Data (01/04/2026 -> 2026-04-01)
-                date_obj = datetime.strptime(date_str, '%d/%m/%Y').date()
-                
-                # Converter Valor (-9.48 -> 9.48 e tipo IN/OUT)
-                amount_float = float(amount_raw)
-                transaction_type = 'IN' if amount_float > 0 else 'OUT'
-                final_amount = abs(amount_float)
-                
-                # Categoria Padrão baseada na descrição
-                category = "Importado (Nubank)"
-                if "Pix" in description:
-                    category = "Transferência Pix"
-                elif "Fatura" in description or "Pagamento" in description:
-                    category = "Pagamentos"
-                elif "Compra" in description:
-                    category = "Compras"
-                
-                # Verificar se já existe para evitar duplicata
-                exists = Transaction.objects.filter(
-                    account=account,
-                    date=date_obj,
-                    amount=final_amount,
-                    title=description[:200]
-                ).exists()
-                
-                if not exists:
-                    Transaction.objects.create(
+                try:
+                    # Converter Data
+                    date_obj = datetime.strptime(date_str.strip(), '%d/%m/%Y').date()
+                    
+                    # Limpar valor (alguns CSVs usam vírgula para decimal)
+                    amount_clean = amount_raw.strip().replace(',', '.')
+                    amount_float = float(amount_clean)
+                    
+                    transaction_type = 'IN' if amount_float > 0 else 'OUT'
+                    final_amount = abs(amount_float)
+                    
+                    title = description.strip()[:200]
+                    
+                    # Categoria
+                    category = "Pix" if "Pix" in title else "Importado"
+                    
+                    # Verifica duplicata
+                    exists = Transaction.objects.filter(
                         account=account,
                         date=date_obj,
                         amount=final_amount,
-                        transaction_type=transaction_type,
-                        title=description[:200],
-                        category=category
-                    )
-                    created_count += 1
-                else:
-                    skipped_count += 1
+                        title=title
+                    ).exists()
+                    
+                    if not exists:
+                        Transaction.objects.create(
+                            account=account,
+                            date=date_obj,
+                            amount=final_amount,
+                            transaction_type=transaction_type,
+                            title=title,
+                            category=category
+                        )
+                        created_count += 1
+                    else:
+                        skipped_count += 1
+                except (ValueError, TypeError) as e:
+                    print(f"Erro na linha: {row} - Erro: {e}")
+                    continue
             
-            messages.success(request, f"Importação concluída! {created_count} novas transações adicionadas. {skipped_count} duplicatas ignoradas.")
+            messages.success(request, f"Processamento concluído: {created_count} novas, {skipped_count} duplicatas.")
             return redirect('dashboard')
             
         except Exception as e:
