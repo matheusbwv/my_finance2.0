@@ -26,7 +26,7 @@ class DashboardView(TemplateView):
         for acc in accounts:
             all_transactions = Transaction.objects.filter(account=acc)
             
-            # Saldo apenas de DINHEIRO (Exclui o que é Cartão de Crédito para não abater do saldo precocemente)
+            # Saldo financeiro
             cash_transactions = all_transactions.exclude(category="Cartão de Crédito")
             income = cash_transactions.filter(transaction_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
             expense = cash_transactions.filter(transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
@@ -36,8 +36,10 @@ class DashboardView(TemplateView):
             c_income = credit_transactions.filter(transaction_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
             c_expense = credit_transactions.filter(transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
             
-            acc.real_balance = acc.balance + income - expense
             acc.credit_balance = c_expense - c_income # Total que você gastou no crédito
+            
+            # Subtraímos a dívida do cartão (credit_balance) do saldo para exibir o valor realmente disponível (líquido)
+            acc.real_balance = acc.balance + income - expense - acc.credit_balance
             
             total_balance += acc.real_balance
             total_credit_debt += acc.credit_balance
