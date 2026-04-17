@@ -22,6 +22,7 @@ class Debt(models.Model):
         ('PAID', 'Paga'),
     ]
     title = models.CharField(max_length=200, verbose_name="Título da Dívida")
+    creditor = models.CharField(max_length=150, blank=True, null=True, verbose_name="Credor (Para quem deve?)")
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Valor Total")
     paid_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Valor Pago")
     debt_type = models.CharField(max_length=4, choices=TYPE_CHOICES, default='TEMP')
