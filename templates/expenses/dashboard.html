@@ -1,22 +1,22 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-end mb-5">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-end gap-3 mb-5">
     <div>
         <h2 class="mb-1">Dashboard</h2>
         <p class="text-muted small mb-0">Bem-vindo de volta ao seu controle financeiro.</p>
     </div>
     
-    <!-- Filtro Minimalista -->
-    <form class="d-flex gap-2" method="get">
-        <select name="month" class="form-select form-select-sm">
+    <!-- Filtro Minimalista Ajustado para Mobile -->
+    <form class="d-flex gap-2 w-100 w-md-auto" method="get">
+        <select name="month" class="form-select form-select-sm" style="min-width: 100px;">
             {% for m in months_range %}
                 <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>
                     Mês {{ m }}
                 </option>
             {% endfor %}
         </select>
-        <input type="number" name="year" value="{{ current_year }}" class="form-control form-control-sm" style="width: 90px;">
+        <input type="number" name="year" value="{{ current_year }}" class="form-control form-control-sm" style="width: 85px;">
         <button type="submit" class="btn btn-outline-custom btn-sm px-3">Filtrar</button>
     </form>
 </div>
