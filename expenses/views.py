@@ -32,13 +32,27 @@ class DashboardView(TemplateView):
         context['accounts'] = accounts
         context['total_balance'] = total_balance
 
-        # 2. Filtro de Mês e Ano para os outros cards
+        # 2. Filtro de Mês e Ano para os outros cards (Receitas/Despesas do período)
         month = self.request.GET.get('month', datetime.now().month)
+        year = self.request.GET.get('year', datetime.now().year)
+        
+        try:
+            month = int(month)
+            year = int(year)
+        except ValueError:
+            month = datetime.now().month
+            year = datetime.now().year
+
+        transactions_month = Transaction.objects.filter(date__month=month, date__year=year)
+        
+        context['total_income'] = transactions_month.filter(transaction_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
+        context['total_expense'] = transactions_month.filter(transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
+        context['balance_month'] = context['total_income'] - context['total_expense']
         
         context['active_debts'] = Debt.objects.filter(status='ACTIVE')
         context['total_debts'] = sum(d.remaining_amount for d in context['active_debts'])
         
-        context['recent_transactions'] = Transaction.objects.all()[:10]
+        context['recent_transactions'] = Transaction.objects.all().order_by('-date')[:10]
         context['current_month'] = month
         context['current_year'] = year
         
