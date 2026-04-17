@@ -54,6 +54,7 @@ class TransactionListView(ListView):
     model = Transaction
     template_name = 'expenses/transaction_list.html'
     context_object_name = 'transactions'
+    ordering = ['-date']
 
 class TransactionCreateView(CreateView):
     model = Transaction

@@ -225,6 +225,15 @@
     </nav>
 
     <div class="container py-5">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show border-0 rounded-4 mb-4" role="alert" style="background-color: var(--surface-light); color: var(--text-white);">
+                    {{ message }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
         {% block content %}{% endblock %}
     </div>
 
