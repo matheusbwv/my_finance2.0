@@ -22,33 +22,33 @@
 </div>
 
 <!-- Resumo Principal em Grid Minimalista -->
-<div class="row g-4 mb-5">
-    <div class="col-md-3">
-        <div class="card h-100">
-            <span class="text-muted small fw-semibold text-uppercase mb-2">Saldo Total</span>
-            <h3 class="mb-3">R$ {{ total_balance|stringformat:".2f" }}</h3>
-            <a href="{% url 'account-create' %}" class="text-purple small text-decoration-none fw-medium mt-auto">+ Adicionar Banco</a>
+<div class="row g-3 g-md-4 mb-5">
+    <div class="col-6 col-md-3">
+        <div class="card h-100 p-3 p-md-4">
+            <span class="text-muted small fw-semibold text-uppercase mb-2" style="font-size: 0.65rem;">Saldo Total</span>
+            <h4 class="mb-2 mb-md-3 text-truncate">R$ {{ total_balance|stringformat:".2f" }}</h4>
+            <a href="{% url 'account-create' %}" class="text-purple small text-decoration-none fw-medium mt-auto" style="font-size: 0.75rem;">+ Banco</a>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card h-100">
-            <span class="text-muted small fw-semibold text-uppercase mb-2">Receitas</span>
-            <h3 class="text-success mb-0">R$ {{ total_income|stringformat:".2f" }}</h3>
-            <span class="text-muted small mt-2">Neste período</span>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 p-3 p-md-4">
+            <span class="text-muted small fw-semibold text-uppercase mb-2" style="font-size: 0.65rem;">Receitas</span>
+            <h4 class="text-success mb-0 text-truncate">R$ {{ total_income|stringformat:".2f" }}</h4>
+            <span class="text-muted small mt-2 d-none d-md-block">Neste período</span>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card h-100">
-            <span class="text-muted small fw-semibold text-uppercase mb-2">Despesas</span>
-            <h3 class="text-danger mb-0">R$ {{ total_expense|stringformat:".2f" }}</h3>
-            <span class="text-muted small mt-2">Neste período</span>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 p-3 p-md-4">
+            <span class="text-muted small fw-semibold text-uppercase mb-2" style="font-size: 0.65rem;">Despesas</span>
+            <h4 class="text-danger mb-0 text-truncate">R$ {{ total_expense|stringformat:".2f" }}</h4>
+            <span class="text-muted small mt-2 d-none d-md-block">Neste período</span>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card h-100 border-start border-purple border-3">
-            <span class="text-muted small fw-semibold text-uppercase mb-2">Dívidas</span>
-            <h3 class="mb-3">R$ {{ total_debts|stringformat:".2f" }}</h3>
-            <a href="{% url 'debt-create' %}" class="text-purple small text-decoration-none fw-medium mt-auto">+ Registrar Dívida</a>
+    <div class="col-6 col-md-3">
+        <div class="card h-100 p-3 p-md-4 border-start border-purple border-3">
+            <span class="text-muted small fw-semibold text-uppercase mb-2" style="font-size: 0.65rem;">Dívidas</span>
+            <h4 class="mb-2 mb-md-3 text-truncate">R$ {{ total_debts|stringformat:".2f" }}</h4>
+            <a href="{% url 'debt-create' %}" class="text-purple small text-decoration-none fw-medium mt-auto" style="font-size: 0.75rem;">+ Dívida</a>
         </div>
     </div>
 </div>
@@ -89,17 +89,17 @@
                         <tr>
                             <th style="background-color: transparent;">Data</th>
                             <th style="background-color: transparent;">Descrição</th>
-                            <th style="background-color: transparent;">Categoria</th>
+                            <th style="background-color: transparent;" class="d-none d-sm-table-cell">Categoria</th>
                             <th style="background-color: transparent;" class="text-end">Valor</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for t in recent_transactions %}
                         <tr style="background-color: transparent;">
-                            <td class="text-muted small align-middle" style="background-color: transparent;">{{ t.date|date:"d M" }}</td>
-                            <td class="fw-semibold align-middle" style="background-color: transparent;">{{ t.title }}</td>
-                            <td class="align-middle" style="background-color: transparent;"><span class="badge-custom small">{{ t.category }}</span></td>
-                            <td class="text-end fw-bold align-middle {% if t.transaction_type == 'IN' %}text-success{% else %}text-danger{% endif %}" style="background-color: transparent;">
+                            <td class="text-muted small align-middle" style="background-color: transparent; white-space: nowrap;">{{ t.date|date:"d M" }}</td>
+                            <td class="fw-semibold align-middle text-truncate" style="background-color: transparent; max-width: 120px;">{{ t.title }}</td>
+                            <td class="align-middle d-none d-sm-table-cell" style="background-color: transparent;"><span class="badge-custom small">{{ t.category }}</span></td>
+                            <td class="text-end fw-bold align-middle {% if t.transaction_type == 'IN' %}text-success{% else %}text-danger{% endif %}" style="background-color: transparent; white-space: nowrap;">
                                 {% if t.transaction_type == 'IN' %}+{% else %}-{% endif %} R$ {{ t.amount }}
                             </td>
                         </tr>
