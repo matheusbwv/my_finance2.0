@@ -38,10 +38,13 @@ class DashboardView(TemplateView):
         accounts = Account.objects.all()
         total_balance = 0
         
-        # Calcular saldo real para cada conta
+        # Calcular saldo real para cada conta (Considerando TODO o histórico)
         for acc in accounts:
-            income = Transaction.objects.filter(account=acc, transaction_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
-            expense = Transaction.objects.filter(account=acc, transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
+            # Pegamos TODAS as transações dessa conta, sem filtro de data
+            all_transactions = Transaction.objects.filter(account=acc)
+            income = all_transactions.filter(transaction_type='IN').aggregate(Sum('amount'))['amount__sum'] or 0
+            expense = all_transactions.filter(transaction_type='OUT').aggregate(Sum('amount'))['amount__sum'] or 0
+            
             # Saldo Inicial + Entradas - Saídas
             acc.real_balance = acc.balance + income - expense
             total_balance += acc.real_balance
