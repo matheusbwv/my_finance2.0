@@ -105,11 +105,15 @@ def import_nubank_csv(request):
             file_data = csv_file.read().decode('utf-8-sig')
             io_string = io.StringIO(file_data)
             
-            # Usamos o sniffer para detectar o delimitador (vírgula ou ponto e vírgula)
-            dialect = csv.Sniffer().sniff(io_string.read(1024))
+            # Tenta ler com vírgula primeiro, se falhar ou encontrar apenas 1 coluna, tenta ponto e vírgula
+            content = io_string.read()
             io_string.seek(0)
             
-            reader = csv.DictReader(io_string, dialect=dialect)
+            delimiter = ','
+            if ';' in content and (content.count(';') > content.count(',')):
+                delimiter = ';'
+            
+            reader = csv.DictReader(io_string, delimiter=delimiter)
             
             # Limpa os nomes das colunas (remove espaços extras)
             reader.fieldnames = [name.strip() for name in reader.fieldnames]
